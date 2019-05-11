@@ -11,6 +11,7 @@ use think\Loader;
 // 插件目录
 define('ADDON_PATH', ROOT_PATH . 'addons' . DS);
 
+
 // 定义路由
 Route::any('addons/:addon/[:controller]/[:action]', "\\think\\addons\\Route@execute");
 
@@ -165,11 +166,11 @@ function get_addon_autoload_config($truncate = false)
         $config['hooks'] = [];
     }
     $route = [];
-    // 读取插件目录及钩子列表
+    // 读取插件目录及钩子列表Rewrite
     $base = get_class_methods("\\think\\Addons");
     $base = array_merge($base, ['install', 'uninstall', 'enable', 'disable']);
 
-    $url_domain_deploy = Config::get('url_domain_deploy');
+    $url_domain_deploy = Config::get('app.url_domain_deploy');
     $addons = get_addon_list();
     $domain = [];
     foreach ($addons as $name => $addon) {
@@ -333,8 +334,9 @@ function addon_url($url, $vars = [], $suffix = true, $domain = false)
     }
     $val = "@addons/{$url}";
     $config = get_addon_config($addon);
-    $dispatch = think\Request::instance()->dispatch();
-    $indomain = isset($dispatch['var']['indomain']) && $dispatch['var']['indomain'] ? true : false;
+    $dispatch = think\facade\Request::dispatch();
+    $indomain = false;
+    // $indomain = isset($dispatch['var']['indomain']) && $dispatch['var']['indomain'] ? true : false;
     $domainprefix = $config && isset($config['domain']) && $config['domain'] ? $config['domain'] : '';
     $rewrite = $config && isset($config['rewrite']) && $config['rewrite'] ? $config['rewrite'] : [];
     if ($rewrite) {

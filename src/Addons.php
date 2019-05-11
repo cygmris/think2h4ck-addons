@@ -37,7 +37,7 @@ abstract class Addons
 
         // 初始化视图模型
         $config = ['view_path' => $this->addons_path];
-        $config = array_merge(Config::get('template'), $config);
+        $config = array_merge(Config::get('template.'), $config);
         $this->view = new View($config, Config::get('view_replace_str'));
 
         // 控制器初始化
@@ -56,7 +56,7 @@ abstract class Addons
         if (empty($name)) {
             $name = $this->getName();
         }
-        $info = Config::get($name, $this->infoRange);
+        $info = Config::pull($name, $this->infoRange);
         if ($info) {
             return $info;
         }

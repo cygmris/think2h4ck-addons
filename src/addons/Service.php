@@ -7,6 +7,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use think\Db;
 use think\Exception;
+use think\facade\Env;
 use ZipArchive;
 
 /**
@@ -27,23 +28,23 @@ class Service
      */
     public static function download($name, $extend = [])
     {
-        $addonTmpDir = RUNTIME_PATH . 'addons' . DS;
+        $addonTmpDir = Env::get('runtime_path') . 'addons' . DS;
         if (!is_dir($addonTmpDir)) {
             @mkdir($addonTmpDir, 0755, true);
         }
         $tmpFile = $addonTmpDir . $name . ".zip";
         $options = [
             CURLOPT_CONNECTTIMEOUT => 30,
-            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_TIMEOUT => 30,
             CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_HTTPHEADER     => [
-                'X-REQUESTED-WITH: XMLHttpRequest'
-            ]
+            CURLOPT_HTTPHEADER => [
+                'X-REQUESTED-WITH: XMLHttpRequest',
+            ],
         ];
         $ret = Http::sendRequest(self::getServerUrl() . '/addon/download', array_merge(['name' => $name], $extend), 'GET', $options);
         if ($ret['ret']) {
             if (substr($ret['msg'], 0, 1) == '{') {
-                $json = (array)json_decode($ret['msg'], true);
+                $json = (array) json_decode($ret['msg'], true);
                 //如果传回的是一个下载链接,则再次下载
                 if ($json['data'] && isset($json['data']['url'])) {
                     array_pop($options);
@@ -76,11 +77,11 @@ class Service
      */
     public static function unzip($name)
     {
-        $file = RUNTIME_PATH . 'addons' . DS . $name . '.zip';
+        $file = Env::get('runtime_path') . 'addons' . DS . $name . '.zip';
         $dir = ADDON_PATH . $name . DS;
         if (class_exists('ZipArchive')) {
             $zip = new ZipArchive;
-            if ($zip->open($file) !== TRUE) {
+            if ($zip->open($file) !== true) {
                 throw new Exception('Unable to open the zip file');
             }
             if (!$zip->extractTo($dir)) {
@@ -101,7 +102,7 @@ class Service
      */
     public static function backup($name)
     {
-        $file = RUNTIME_PATH . 'addons' . DS . $name . '-backup-' . date("YmdHis") . '.zip';
+        $file = Env::get('runtime_path') . 'addons' . DS . $name . '-backup-' . date("YmdHis") . '.zip';
         $dir = ADDON_PATH . $name . DS;
         if (class_exists('ZipArchive')) {
             $zip = new ZipArchive;
@@ -178,15 +179,17 @@ class Service
             $lines = file($sqlFile);
             $templine = '';
             foreach ($lines as $line) {
-                if (substr($line, 0, 2) == '--' || $line == '' || substr($line, 0, 2) == '/*')
+                if (substr($line, 0, 2) == '--' || $line == '' || substr($line, 0, 2) == '/*') {
                     continue;
+                }
 
                 $templine .= $line;
                 if (substr(trim($line), -1, 1) == ';') {
                     $templine = str_ireplace('__PREFIX__', config('database.prefix'), $templine);
                     $templine = str_ireplace('INSERT INTO ', 'INSERT IGNORE INTO ', $templine);
                     try {
-                        Db::getPdo()->exec($templine);
+//                        Db::getPdo()->exec($templine);
+                        Db::execute($templine);
                     } catch (\PDOException $e) {
                         //$e->getMessage();
                     }
@@ -230,15 +233,16 @@ EOD;
         $file = APP_PATH . 'extra' . DS . 'addons.php';
 
         $config = get_addon_autoload_config(true);
-        if ($config['autoload'])
+        if ($config['autoload']) {
             return;
+        }
 
         if (!is_really_writable($file)) {
             throw new Exception("addons.php文件没有写入权限");
         }
 
         if ($handle = fopen($file, 'w')) {
-            fwrite($handle, "<?php\n\n" . "return " . var_export($config, TRUE) . ";");
+            fwrite($handle, "<?php\n\n" . "return " . var_export($config, true) . ";");
             fclose($handle);
         } else {
             throw new Exception("文件没有写入权限");
@@ -264,7 +268,6 @@ EOD;
 
         // 远程下载插件
         $tmpFile = Service::download($name, $extend);
-
         // 解压插件
         $addonDir = Service::unzip($name);
 
@@ -277,11 +280,14 @@ EOD;
 
             if (!$force) {
                 Service::noconflict($name);
+
             }
         } catch (AddonException $e) {
+
             @rmdirs($addonDir);
             throw new AddonException($e->getMessage(), $e->getCode(), $e->getData());
         } catch (Exception $e) {
+
             @rmdirs($addonDir);
             throw new Exception($e->getMessage());
         }
@@ -308,9 +314,11 @@ EOD;
 
             // 执行安装脚本
             $class = get_addon_class($name);
+
             if (class_exists($class)) {
                 $addon = new $class();
                 $addon->install();
+
             }
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
@@ -553,8 +561,10 @@ EOD;
         // 扫描插件目录是否有覆盖的文件
         foreach (self::getCheckDirs() as $k => $dir) {
             $checkDir = ROOT_PATH . DS . $dir . DS;
-            if (!is_dir($checkDir))
+            if (!is_dir($checkDir)) {
                 continue;
+            }
+
             //检测到存在插件外目录
             if (is_dir($addonDir . $dir)) {
                 //匹配出所有的文件
@@ -624,7 +634,7 @@ EOD;
     {
         return [
             'application',
-            'public'
+            'public',
         ];
     }
 
