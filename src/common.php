@@ -77,7 +77,7 @@ Hook::add('app_init', function () {
     }
 
     // 获取系统配置
-    $hooks = config('app_debug') ? [] : Cache::get('hooks', []);
+    $hooks = config('app_debug') ? [] : Cache::pull('hooks', []);
     if (empty($hooks)) {
         $hooks = (array) Config::get('addons.hooks');
 
@@ -99,7 +99,8 @@ Hook::add('app_init', function () {
         }
     }
 
-    Hook::import($hooks, false);
+//    Hook::import($hooks, false);
+    Hook::import($hooks);
 });
 
 /**
@@ -159,8 +160,10 @@ function get_addon_list()
  */
 function get_addon_autoload_config($truncate = false)
 {
+    Log::debug('get_addon_autoload_config');
+
     // 读取addons的配置
-    $config = (array) Config::get('addons');
+    $config = (array) Config::pull('addons');
     if ($truncate) {
         // 清空手动配置的钩子
         $config['hooks'] = [];
@@ -182,6 +185,7 @@ function get_addon_autoload_config($truncate = false)
         $methods = (array) get_class_methods("\\addons\\" . $name . "\\" . ucfirst($name));
         // 跟插件基类方法做比对，得到差异结果
         $hooks = array_diff($methods, $base);
+
         // 循环将钩子方法写入配置中
         foreach ($hooks as $hook) {
             $hook = Loader::parseName($hook, 0, false);
@@ -202,6 +206,7 @@ function get_addon_autoload_config($truncate = false)
             $rule = array_map(function ($value) use ($addon) {
                 return "{$addon['name']}/{$value}";
             }, array_flip($conf['rewrite']));
+
             if ($url_domain_deploy && isset($conf['domain']) && $conf['domain']) {
                 $domain[] = [
                     'addon' => $addon['name'],
@@ -227,6 +232,7 @@ function get_addon_autoload_config($truncate = false)
  */
 function get_addon_class($name, $type = 'hook', $class = null)
 {
+    Log::debug('get_addon_class');
     $name = Loader::parseName($name);
     // 处理多级控制器情况
     if (!is_null($class) && strpos($class, '.')) {
@@ -254,6 +260,7 @@ function get_addon_class($name, $type = 'hook', $class = null)
  */
 function get_addon_info($name)
 {
+    Log::debug('get_addon_info');
     $addon = get_addon_instance($name);
     if (!$addon) {
         return [];
@@ -282,6 +289,7 @@ function get_addon_fullconfig($name)
  */
 function get_addon_config($name)
 {
+    Log::debug('get_addon_config');
     $addon = get_addon_instance($name);
     if (!$addon) {
         return [];
@@ -296,6 +304,7 @@ function get_addon_config($name)
  */
 function get_addon_instance($name)
 {
+    Log::debug('get_addon_instance');
     static $_addons = [];
     if (isset($_addons[$name])) {
         return $_addons[$name];
@@ -379,6 +388,7 @@ function addon_url($url, $vars = [], $suffix = true, $domain = false)
  */
 function set_addon_info($name, $array)
 {
+    Log::debug('set_addon_info');
     $file = ADDON_PATH . $name . DIRECTORY_SEPARATOR . 'info.ini';
     $addon = get_addon_instance($name);
     $array = $addon->setInfo($name, $array);
@@ -399,10 +409,11 @@ function set_addon_info($name, $array)
         fwrite($handle, implode("\n", $res) . "\n");
         fclose($handle);
         //清空当前配置缓存
-        Config::set($name, null, 'addoninfo');
+        Config::set($name, null);
     } else {
         throw new Exception("文件没有写入权限");
     }
+    Log::debug('set_addon_info done');
     return true;
 }
 

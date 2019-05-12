@@ -8,6 +8,7 @@ use RecursiveIteratorIterator;
 use think\Db;
 use think\Exception;
 use think\facade\Env;
+use think\facade\Log;
 use ZipArchive;
 
 /**
@@ -209,6 +210,7 @@ class Service
     public static function refresh()
     {
         //刷新addons.js
+        Log::debug('refresh addon cache');
         $addons = get_addon_list();
         $bootstrapArr = [];
         foreach ($addons as $name => $addon) {
@@ -230,9 +232,11 @@ EOD;
             throw new Exception("addons.js文件没有写入权限");
         }
 
-        $file = APP_PATH . 'extra' . DS . 'addons.php';
+//        $file = APP_PATH . 'extra' . DS . 'addons.php';
+        $file = Env::get('config_path').'addons.php';
 
         $config = get_addon_autoload_config(true);
+
         if ($config['autoload']) {
             return;
         }
@@ -391,6 +395,7 @@ EOD;
      */
     public static function enable($name, $force = false)
     {
+        Log::debug('enable addon...');
         if (!$name || !is_dir(ADDON_PATH . $name)) {
             throw new Exception('Addon not exists');
         }
@@ -419,6 +424,7 @@ EOD;
             if (class_exists($class)) {
                 $addon = new $class();
                 if (method_exists($class, "enable")) {
+                    Log::debug('execute addon enable script');
                     $addon->enable();
                 }
             }
@@ -427,10 +433,13 @@ EOD;
         }
 
         $info = get_addon_info($name);
+        Log::debug('get_addon_info done');
         $info['state'] = 1;
         unset($info['url']);
 
         set_addon_info($name, $info);
+
+        Log::debug('addon enabled');
 
         // 刷新
         Service::refresh();
@@ -447,6 +456,7 @@ EOD;
      */
     public static function disable($name, $force = false)
     {
+        Log::debug('disable addon...');
         if (!$name || !is_dir(ADDON_PATH . $name)) {
             throw new Exception('Addon not exists');
         }
@@ -485,6 +495,8 @@ EOD;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
+
+        Log::debug('addon disabled');
 
         // 刷新
         Service::refresh();

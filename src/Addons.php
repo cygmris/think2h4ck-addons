@@ -56,16 +56,16 @@ abstract class Addons
         if (empty($name)) {
             $name = $this->getName();
         }
-        $info = Config::pull($name, $this->infoRange);
+        $info = Config::get("$name.$this->infoRange");
         if ($info) {
             return $info;
         }
         $info_file = $this->addons_path . 'info.ini';
         if (is_file($info_file)) {
-            $info = Config::parse($info_file, '', $name, $this->infoRange);
+            $info = Config::parse($info_file, '', "$name.$this->infoRange");
             $info['url'] = addon_url($name);
         }
-        Config::set($name, $info, $this->infoRange);
+        Config::set("$name.$this->infoRange", $info);
 
         return $info ? $info : [];
     }
@@ -80,7 +80,7 @@ abstract class Addons
         if (empty($name)) {
             $name = $this->getName();
         }
-        $config = Config::get($name, $this->configRange);
+        $config = Config::get("$name.$this->configRange");
         if ($config) {
             return $config;
         }
@@ -92,7 +92,7 @@ abstract class Addons
             }
             unset($temp_arr);
         }
-        Config::set($name, $config, $this->configRange);
+        Config::set("$name.$this->configRange", $config);
 
         return $config;
     }
@@ -108,9 +108,9 @@ abstract class Addons
         if (empty($name)) {
             $name = $this->getName();
         }
-        $config = $this->getConfig($name);
+        $config = $this->getConfig("$name.$this->configRange");
         $config = array_merge($config, $value);
-        Config::set($name, $config, $this->configRange);
+        Config::set("$name.$this->configRange", $config);
         return $config;
     }
 
@@ -125,9 +125,9 @@ abstract class Addons
         if (empty($name)) {
             $name = $this->getName();
         }
-        $info = $this->getInfo($name);
+        $info = $this->getInfo("$name.$this->infoRange");
         $info = array_merge($info, $value);
-        Config::set($name, $info, $this->infoRange);
+        Config::set("$name.$this->infoRange", $info);
         return $info;
     }
 

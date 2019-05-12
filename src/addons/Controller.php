@@ -145,7 +145,7 @@ class Controller extends \think\Controller
 
         $this->view->assign('user', $this->auth->getUser());
 
-        $site = Config::get("site");
+        $site = Config::pull("site");
 
         $upload = \app\common\model\Config::upload();
 
