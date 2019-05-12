@@ -41,8 +41,8 @@ abstract class Addons
         $this->view = new View($config, Config::get('view_replace_str'));
 
         // 控制器初始化
-        if (method_exists($this, '_initialize')) {
-            $this->_initialize();
+        if (method_exists($this, 'initialize')) {
+            $this->initialize();
         }
     }
 

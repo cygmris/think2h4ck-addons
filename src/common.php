@@ -409,7 +409,7 @@ function set_addon_info($name, $array)
         fwrite($handle, implode("\n", $res) . "\n");
         fclose($handle);
         //清空当前配置缓存
-        Config::set($name, null);
+        Config::set("$name.addoninfo", null);
     } else {
         throw new Exception("文件没有写入权限");
     }
